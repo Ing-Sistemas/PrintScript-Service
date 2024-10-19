@@ -6,12 +6,6 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - ${PORT}:${PORT}
+      - "8082:8082"
     env_file:
       - .env
-    networks:
-        - wii-network
-
-networks:
-    wii-network:
-        external: true
