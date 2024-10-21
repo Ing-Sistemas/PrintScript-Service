@@ -44,6 +44,8 @@ dependencies {
     implementation 'com.printscript:parser:1.1.4'
     implementation 'com.printscript:runner:1.1.4'
     implementation 'com.google.code.gson:gson:2.8.9'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 }
 
 kotlin {
