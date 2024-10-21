@@ -5,6 +5,15 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.6'
 }
 
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/Ing-Sistemas/Print-Script")
+    }
+}
+
 group = 'ingsis'
 version = '0.0.1-SNAPSHOT'
 
@@ -25,6 +34,16 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation 'com.printscript:formatter:1.1.4'
+    implementation 'com.printscript:token:1.1.4'
+    implementation 'com.printscript:ast:1.1.4'
+    implementation 'com.printscript:lexer:1.1.4'
+    implementation 'com.printscript:interpreter:1.1.4'
+    implementation 'com.printscript:cli:1.1.4'
+    implementation 'com.printscript:linter:1.1.4'
+    implementation 'com.printscript:parser:1.1.4'
+    implementation 'com.printscript:runner:1.1.4'
+    implementation 'com.google.code.gson:gson:2.8.9'
 }
 
 kotlin {
