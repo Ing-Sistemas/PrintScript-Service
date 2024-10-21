@@ -11,6 +11,11 @@ repositories {
     maven {
         name = "GitHubPackages"
         url = uri("https://maven.pkg.github.com/Ing-Sistemas/Print-Script")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+        }
+
     }
 }
 
@@ -35,6 +40,15 @@ dependencies {
 	testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     implementation 'com.google.code.gson:gson:2.8.9'
+    implementation 'com.printscript:formatter:1.1.8'
+    implementation 'com.printscript:token:1.1.8'
+    implementation 'com.printscript:ast:1.1.8'
+    implementation 'com.printscript:lexer:1.1.8'
+    implementation 'com.printscript:interpreter:1.1.8'
+    implementation 'com.printscript:cli:1.1.8'
+    implementation 'com.printscript:linter:1.1.8'
+    implementation 'com.printscript:parser:1.1.8'
+    implementation 'com.printscript:runner:1.1.8'
 }
 
 kotlin {
