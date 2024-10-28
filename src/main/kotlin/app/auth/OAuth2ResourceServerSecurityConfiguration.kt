@@ -28,7 +28,7 @@ class OAuth2ResourceServerSecurityConfiguration(@Value("\${auth0.audience}")
             it
                 .requestMatchers("/").permitAll()
                 .requestMatchers(GET, "/api/test").permitAll()
-                .requestMatchers(POST,"api/validate").permitAll()
+                .requestMatchers(POST,"/api/validate").permitAll()
                 .anyRequest().authenticated()
         }
             .oauth2ResourceServer { it.jwt(withDefaults()) }
