@@ -1,6 +1,13 @@
 spring:
   application:
     name: printScript-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AUTH_SERVER_URI}
+          client-id: ${AUTH_CLIENT_ID}
+          client-secret: ${AUTH_CLIENT_SECRET}
 
 server:
   port: 8082
