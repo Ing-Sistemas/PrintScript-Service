@@ -10,4 +10,4 @@ spring:
           client-secret: ${AUTH_CLIENT_SECRET}
 
 server:
-  port: 8082
+  port: ${PRINTSCRIPT_PORT}
