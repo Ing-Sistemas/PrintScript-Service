@@ -3,7 +3,7 @@ spring:
     name: printScript-service
   security:
     oauth2:
-      resourceserver:
+      resource-server:
         jwt:
           issuer-uri: ${AUTH_SERVER_URI}
           client-id: ${AUTH_CLIENT_ID}
@@ -11,3 +11,6 @@ spring:
 
 server:
   port: ${PRINTSCRIPT_PORT}
+
+ui:
+    url: ${UI_URL}
