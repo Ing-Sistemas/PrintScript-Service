@@ -1,6 +1,7 @@
 package com.example.springboot.app.controller
 
 import com.example.springboot.app.service.PrintScriptService
+import com.example.springboot.app.utils.TestCase
 import com.example.springboot.app.utils.ValidateRequest
 import com.example.springboot.app.utils.ValidateResponse
 import com.printscript.ast.ASTNode
@@ -70,5 +71,15 @@ class PrintScriptController(
         @AuthenticationPrincipal jwt: Jwt
     ) {
         //TODO  async fun, this will send event to redis
+    }
+
+    @PostMapping("/run_tests")
+    fun runTests(
+        @RequestBody testCase: TestCase,
+        @AuthenticationPrincipal jwt: Jwt
+    ): ResponseEntity<String> {
+        // todo si dado input da el mismo output q testCase.output -> "success"
+
+        return ResponseEntity.ok("success")
     }
 }
