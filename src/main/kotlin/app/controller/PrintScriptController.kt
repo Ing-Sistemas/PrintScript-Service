@@ -5,13 +5,10 @@ import com.example.springboot.app.utils.ValidateRequest
 import com.example.springboot.app.utils.ValidateResponse
 import com.printscript.ast.ASTNode
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api")
@@ -70,5 +67,20 @@ class PrintScriptController(
         @AuthenticationPrincipal jwt: Jwt
     ) {
         //TODO  async fun, this will send event to redis
+    }
+
+    @GetMapping("/fetch/{snippetId}")
+    fun fetchSnippet(
+        @PathVariable snippetId: String,
+        @AuthenticationPrincipal jwt: Jwt
+    ): ResponseEntity<String> {
+        return try {
+            val result = printScriptService.fetchSnippet(snippetId)
+            //val file = printScriptService.genFile(result)
+            ResponseEntity.ok(String(result.resource.contentAsByteArray))
+        } catch (e: Exception) {
+            println(e.message)
+            ResponseEntity.status(500).body(null)
+        }
     }
 }

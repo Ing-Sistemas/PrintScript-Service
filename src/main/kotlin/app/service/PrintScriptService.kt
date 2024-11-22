@@ -1,5 +1,6 @@
 package com.example.springboot.app.service
 
+import com.example.springboot.app.asset.AssetService
 import com.example.springboot.app.utils.ExecuteResult
 import com.example.springboot.app.utils.ValidationResult
 import org.springframework.stereotype.Service
@@ -11,15 +12,20 @@ import com.printscript.interpreter.results.InterpreterFailure
 import com.printscript.interpreter.results.InterpreterSuccess
 import com.printscript.runner.Runner
 import org.springframework.core.io.ClassPathResource
+import org.springframework.web.multipart.MultipartFile
+import java.io.File
 import java.io.InputStream
+import java.nio.file.Files
 
 @Service
-class PrintScriptService {
+class PrintScriptService(
+    private val assetService: AssetService
+) {
 
     fun validateSnippet(version: String, snippetId: String): ValidationResult {
         try {
             val snippet = fetchSnippet(snippetId)
-            val result = ValidateLogic().validate(version, snippet)
+            val result = ValidateLogic().validate(version, snippet.inputStream)
             return ValidationResult(result, null)//todo add result pattern matching maybe
         } catch (e: Exception) {
             println(e)
@@ -38,11 +44,9 @@ class PrintScriptService {
                 defaultInputProvider,
                 defaultOutputProvider,
                 defaultEnvProvider
-                ).run(snippet, version)
-            //todo change this abomination, how? idk man...
+                ).run(snippet.inputStream, version)
             return when (result) {
                 is InterpreterSuccess -> {
-                    //what the dog doin'?
                     ExecuteResult(result.getOriginalValue().toString(),null)
                 }
                 is InterpreterFailure -> {
@@ -58,13 +62,15 @@ class PrintScriptService {
         }
     }
 
-    fun fetchSnippet(snippetId: String): InputStream {
-        val mockFile = "valid-mock-file.ps"
-        //todo adapt asset service here
-        //this fun is mocked atm, it should fetch the snippet from the asset service and return it
-        //todo, see if the asset service returns files or snippetId streams (? idk kow)
-        val resource = ClassPathResource(mockFile)
-        return resource.inputStream
+    fun fetchSnippet(snippetId: String): MultipartFile {
+        val snippet = assetService.getSnippet(snippetId)
+        return snippet.body!!
+    }
+
+    fun genFile(multipartFile: MultipartFile): File {
+        val tempFile = Files.createTempFile(multipartFile.name, ".ps").toFile()
+        multipartFile.transferTo(tempFile)
+        return tempFile
     }
 
 }
