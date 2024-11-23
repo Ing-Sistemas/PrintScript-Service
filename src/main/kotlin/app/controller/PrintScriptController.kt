@@ -1,11 +1,12 @@
 package com.example.springboot.app.controller
 
 import com.example.springboot.app.service.PrintScriptService
+import com.example.springboot.app.utils.FormatRequest
+import com.example.springboot.app.utils.LintRequest
 import com.example.springboot.app.utils.ValidateRequest
 import com.example.springboot.app.utils.ValidateResponse
-import com.printscript.ast.ASTNode
 import org.springframework.http.ResponseEntity
-
+import org.slf4j.LoggerFactory
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
@@ -15,13 +16,16 @@ import org.springframework.web.bind.annotation.*
 class PrintScriptController(
     private val printScriptService: PrintScriptService,
 ) {
-
+    private val logger = LoggerFactory.getLogger(PrintScriptController::class.java)
     @PostMapping("/validate")
     fun validateSnippet(
         @RequestBody validateRequest: ValidateRequest,
         @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<ValidateResponse> {
         return try {
+            println("Snippet if ${validateRequest.snippetId}")
+            val snippet = printScriptService.fetchSnippet(validateRequest.snippetId)
+            println("asd lksadjkl jklasj kdjaskl jdkalsjd klasjd kljasdlk j$snippet")
             val result = printScriptService.validateSnippet(validateRequest.version, validateRequest.snippetId)
             println(result)
             if(result.error != null){
@@ -30,7 +34,7 @@ class PrintScriptController(
                 ResponseEntity.ok(ValidateResponse("Snippet is valid!", null))
             }
         } catch (e: Exception) {
-            println(e.message)
+            logger.error(e.message)
             ResponseEntity.status(500).body(null)
         }
     }
@@ -48,25 +52,36 @@ class PrintScriptController(
                 ResponseEntity.ok(ValidateResponse(result.output, null))
             }
         } catch (e: Exception) {
-            println(e.message)
+            logger.error(e.message)
             ResponseEntity.status(500).body(null)
         }
     }
 
     @PostMapping("/lint")
     fun lintSnippet(
-        @RequestBody validateRequest: ValidateRequest,
+        @RequestBody lintRequest: LintRequest,
         @AuthenticationPrincipal jwt: Jwt
     ) {
-       //TODO  async fun, this will send event to redis
+        try {
+            val config = printScriptService.genFile(printScriptService.fetchSnippet(lintRequest.rule))
+            val result = printScriptService.lintSnippet(lintRequest.snippetId,config)
+        } catch (e: Exception) {
+            logger.error(e.message)
+            ResponseEntity.status(500).body(null)
+        }
     }
 
     @PostMapping("/format")
     fun formatSnippet(
-        @RequestBody validateRequest: ValidateRequest,
+        @RequestBody formatRequest: FormatRequest,
         @AuthenticationPrincipal jwt: Jwt
     ) {
-        //TODO  async fun, this will send event to redis
+        try {
+            printScriptService.formatSnippet(formatRequest.snippetId, formatRequest.rule)
+        } catch (e: Exception) {
+            logger.error(e.message)
+            ResponseEntity.status(500).body(null)
+        }
     }
 
     @GetMapping("/fetch/{snippetId}")
@@ -79,7 +94,7 @@ class PrintScriptController(
             //val file = printScriptService.genFile(result)
             ResponseEntity.ok(String(result.resource.contentAsByteArray))
         } catch (e: Exception) {
-            println(e.message)
+            logger.error(e.message)
             ResponseEntity.status(500).body(null)
         }
     }

@@ -3,6 +3,9 @@ package com.example.springboot.app.service
 import com.example.springboot.app.asset.AssetService
 import com.example.springboot.app.utils.ExecuteResult
 import com.example.springboot.app.utils.ValidationResult
+import com.printscript.cli.logic.AnalyzeLogic
+import com.printscript.cli.logic.FormatLogic
+import com.printscript.formatter.config.ConfigJsonReader
 import org.springframework.stereotype.Service
 import com.printscript.cli.logic.ValidateLogic
 import com.printscript.interpreter.providers.DefaultEnvProvider
@@ -11,10 +14,8 @@ import com.printscript.interpreter.providers.DefaultOutPutProvider
 import com.printscript.interpreter.results.InterpreterFailure
 import com.printscript.interpreter.results.InterpreterSuccess
 import com.printscript.runner.Runner
-import org.springframework.core.io.ClassPathResource
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
-import java.io.InputStream
 import java.nio.file.Files
 
 @Service
@@ -60,6 +61,17 @@ class PrintScriptService(
             println(e)
             return ExecuteResult(null, e.message)
         }
+    }
+
+    fun lintSnippet(snippetId: String, config: File): List<String> {
+        val snippet = fetchSnippet(snippetId)
+        return AnalyzeLogic().analyse("1.1", snippet.inputStream, config)
+    }
+
+    fun formatSnippet(snippetId: String, configId: String){//FIXME review this
+        val snippet = genFile(fetchSnippet(snippetId))
+        val config = ConfigJsonReader().convertJsonIntoFormatterConfig("aadsads")//FIXME change Formatter at ps
+        FormatLogic().format("1.1", snippet, config)
     }
 
     fun fetchSnippet(snippetId: String): MultipartFile {
