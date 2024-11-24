@@ -57,9 +57,10 @@ class PrintScriptController(
     fun lintSnippet(
         @RequestBody lintRequest: LintRequest,
         @AuthenticationPrincipal jwt: Jwt
-    ) {
-        try {
+    ): ResponseEntity<List<String>> {
+        return try {
             val result = printScriptService.lintSnippet(lintRequest.snippetId,lintRequest.snippetId)
+            ResponseEntity.ok(result)
         } catch (e: Exception) {
             logger.error(e.message)
             ResponseEntity.status(500).body(null)
@@ -70,9 +71,10 @@ class PrintScriptController(
     fun formatSnippet(
         @RequestBody formatRequest: FormatRequest,
         @AuthenticationPrincipal jwt: Jwt
-    ) {
-        try {
+    ): ResponseEntity<String> {
+        return try {
             printScriptService.formatSnippet(formatRequest.snippetId, formatRequest.ruleId)
+            ResponseEntity.ok("Snippet formatted successfully")
         } catch (e: Exception) {
             logger.error(e.message)
             ResponseEntity.status(500).body(null)
