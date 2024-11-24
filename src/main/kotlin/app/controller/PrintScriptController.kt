@@ -24,7 +24,7 @@ class PrintScriptController(
     ): ResponseEntity<ValidateResponse> {
         return try {
             println("Snippet if ${validateRequest.snippetId}")
-            val snippet = printScriptService.fetchSnippet(validateRequest.snippetId)
+            val snippet = printScriptService.fetchMultipartFile(validateRequest.snippetId)
             println("asd lksadjkl jklasj kdjaskl jdkalsjd klasjd kljasdlk j$snippet")
             val result = printScriptService.validateSnippet(validateRequest.version, validateRequest.snippetId)
             println(result)
@@ -63,7 +63,7 @@ class PrintScriptController(
         @AuthenticationPrincipal jwt: Jwt
     ) {
         try {
-            val config = printScriptService.genFile(printScriptService.fetchSnippet(lintRequest.rule))
+            val config = printScriptService.genFile(printScriptService.fetchMultipartFile(lintRequest.rule))
             val result = printScriptService.lintSnippet(lintRequest.snippetId,config)
         } catch (e: Exception) {
             logger.error(e.message)
@@ -90,7 +90,7 @@ class PrintScriptController(
         @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<String> {
         return try {
-            val result = printScriptService.fetchSnippet(snippetId)
+            val result = printScriptService.fetchMultipartFile(snippetId)
             //val file = printScriptService.genFile(result)
             ResponseEntity.ok(String(result.resource.contentAsByteArray))
         } catch (e: Exception) {

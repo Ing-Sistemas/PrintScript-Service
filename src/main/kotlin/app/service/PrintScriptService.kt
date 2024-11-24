@@ -1,11 +1,11 @@
 package com.example.springboot.app.service
 
 import com.example.springboot.app.asset.AssetService
+import com.example.springboot.app.utils.ConfigReader
 import com.example.springboot.app.utils.ExecuteResult
 import com.example.springboot.app.utils.ValidationResult
 import com.printscript.cli.logic.AnalyzeLogic
 import com.printscript.cli.logic.FormatLogic
-import com.printscript.formatter.config.ConfigJsonReader
 import org.springframework.stereotype.Service
 import com.printscript.cli.logic.ValidateLogic
 import com.printscript.interpreter.providers.DefaultEnvProvider
@@ -25,7 +25,7 @@ class PrintScriptService(
 
     fun validateSnippet(version: String, snippetId: String): ValidationResult {
         try {
-            val snippet = fetchSnippet(snippetId)
+            val snippet = fetchMultipartFile(snippetId)
             val result = ValidateLogic().validate(version, snippet.inputStream)
             return ValidationResult(result, null)//todo add result pattern matching maybe
         } catch (e: Exception) {
@@ -36,7 +36,7 @@ class PrintScriptService(
 
     fun executeSnippet(version: String, snippetId: String): ExecuteResult {
         try {
-            val snippet = fetchSnippet(snippetId)
+            val snippet = fetchMultipartFile(snippetId)
             val defaultInputProvider = DefaultInputProvider()
             val defaultOutputProvider = DefaultOutPutProvider()
             val defaultEnvProvider = DefaultEnvProvider()
@@ -63,24 +63,25 @@ class PrintScriptService(
         }
     }
 
-    fun lintSnippet(snippetId: String, config: File): List<String> {
-        val snippet = fetchSnippet(snippetId)
+    fun lintSnippet(snippetId: String, configId: String): List<String> {
+        val snippet = fetchMultipartFile(snippetId)
+        val config = genFile(fetchMultipartFile(configId), "json")
         return AnalyzeLogic().analyse("1.1", snippet.inputStream, config)
     }
 
-    fun formatSnippet(snippetId: String, configId: String){//FIXME review this
-        val snippet = genFile(fetchSnippet(snippetId))
-        val config = ConfigJsonReader().convertJsonIntoFormatterConfig("aadsads")//FIXME change Formatter at ps
+    fun formatSnippet(snippetId: String, configId: String){
+        val snippet = genFile(fetchMultipartFile(snippetId), "ps")
+        val config = ConfigReader().readConfig(genFile(fetchMultipartFile(configId), "json"))
         FormatLogic().format("1.1", snippet, config)
     }
 
-    fun fetchSnippet(snippetId: String): MultipartFile {
+    fun fetchMultipartFile(snippetId: String): MultipartFile {
         val snippet = assetService.getSnippet(snippetId)
         return snippet.body!!
     }
 
-    fun genFile(multipartFile: MultipartFile): File {
-        val tempFile = Files.createTempFile(multipartFile.name, ".ps").toFile()
+    fun genFile(multipartFile: MultipartFile, suffix : String): File {
+        val tempFile = Files.createTempFile(multipartFile.name, suffix).toFile()
         multipartFile.transferTo(tempFile)
         return tempFile
     }
