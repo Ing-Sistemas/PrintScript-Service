@@ -14,6 +14,7 @@ import com.printscript.interpreter.providers.DefaultOutPutProvider
 import com.printscript.interpreter.results.InterpreterFailure
 import com.printscript.interpreter.results.InterpreterSuccess
 import com.printscript.runner.Runner
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
 import java.nio.file.Files
@@ -69,10 +70,11 @@ class PrintScriptService(
         return AnalyzeLogic().analyse("1.1", snippet.inputStream, config)
     }
 
-    fun formatSnippet(snippetId: String, configId: String){
+    fun formatSnippet(snippetId: String, configId: String) {
         val snippet = genFile(fetchMultipartFile(snippetId), "ps")
         val config = ConfigReader().readConfig(genFile(fetchMultipartFile(configId), "json"))
         FormatLogic().format("1.1", snippet, config)
+        assetService.saveSnippet(snippetId, genMultiPartFile(snippet))
     }
 
     fun fetchMultipartFile(snippetId: String): MultipartFile {
@@ -84,6 +86,10 @@ class PrintScriptService(
         val tempFile = Files.createTempFile(multipartFile.name, suffix).toFile()
         multipartFile.transferTo(tempFile)
         return tempFile
+    }
+
+    fun genMultiPartFile(file: File): MultipartFile {
+        return MockMultipartFile(file.name, file.name, Files.probeContentType(file.toPath()), file.readBytes())
     }
 
 }

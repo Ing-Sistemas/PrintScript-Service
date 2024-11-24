@@ -16,10 +16,33 @@ class AssetService {
         .baseUrl("http://host.docker.internal:8083")
         .build()
 
+    fun saveSnippet(snippetId: String, snippetFile: MultipartFile): ResponseEntity<String> {
+        logger.info("Saving snippet with id: $snippetId")
+        val container = "test-container" //CHANGE
+        return try {
+
+            val response = client.put()
+                .uri("/v1/asset/{container}/{snippetId}", container, snippetId)
+                .header("accept", "*/*")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .bodyValue(snippetFile.bytes)
+                .retrieve()
+                .toEntity(String::class.java)
+                .block()!!
+
+            logger.info("Response: $response")
+            response
+        } catch (e: Exception) {
+            logger.error("Failed to save snippet: ${e.message}")
+            ResponseEntity.status(500).body("Failed to save snippet: ${e.message}")
+        }
+    }
+
     fun getSnippet(snippetId: String): ResponseEntity<MultipartFile> {
+        val container = "test-container"//CHANGE
         return try {
             val response = client.get()
-                .uri("/v1/asset/test-container/{snippetId}", snippetId)
+                .uri("/v1/asset/{container}/{snippetId}", container,snippetId)
                 .accept(MediaType.APPLICATION_OCTET_STREAM)
                 .retrieve()
                 .bodyToMono(ByteArray::class.java)
