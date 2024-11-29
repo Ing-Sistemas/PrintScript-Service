@@ -1,24 +1,22 @@
 package com.example.springboot.app.controller
 
 import com.example.springboot.app.service.PrintScriptService
+import com.example.springboot.app.utils.FormatRequest
+import com.example.springboot.app.utils.LintRequest
 import com.example.springboot.app.utils.ValidateRequest
 import com.example.springboot.app.utils.ValidateResponse
-import com.printscript.ast.ASTNode
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
-
+import org.slf4j.LoggerFactory
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api")
 class PrintScriptController(
     private val printScriptService: PrintScriptService,
 ) {
-
+    private val logger = LoggerFactory.getLogger(PrintScriptController::class.java)
     @PostMapping("/validate")
     fun validateSnippet(
         @RequestBody validateRequest: ValidateRequest,
@@ -26,14 +24,13 @@ class PrintScriptController(
     ): ResponseEntity<ValidateResponse> {
         return try {
             val result = printScriptService.validateSnippet(validateRequest.version, validateRequest.snippetId)
-            println(result)
             if(result.error != null){
                 ResponseEntity.status(400).body(ValidateResponse(null,result.error))
             } else {
                 ResponseEntity.ok(ValidateResponse("Snippet is valid!", null))
             }
         } catch (e: Exception) {
-            println(e.message)
+            logger.error(e.message)
             ResponseEntity.status(500).body(null)
         }
     }
@@ -51,24 +48,50 @@ class PrintScriptController(
                 ResponseEntity.ok(ValidateResponse(result.output, null))
             }
         } catch (e: Exception) {
-            println(e.message)
+            logger.error(e.message)
             ResponseEntity.status(500).body(null)
         }
     }
 
     @PostMapping("/lint")
     fun lintSnippet(
-        @RequestBody validateRequest: ValidateRequest,
+        @RequestBody lintRequest: LintRequest,
         @AuthenticationPrincipal jwt: Jwt
-    ) {
-       //TODO  async fun, this will send event to redis
+    ): ResponseEntity<List<String>> {
+        return try {
+            val result = printScriptService.lintSnippet(lintRequest.snippetId,lintRequest.snippetId)
+            ResponseEntity.ok(result)
+        } catch (e: Exception) {
+            logger.error(e.message)
+            ResponseEntity.status(500).body(null)
+        }
     }
 
     @PostMapping("/format")
     fun formatSnippet(
-        @RequestBody validateRequest: ValidateRequest,
+        @RequestBody formatRequest: FormatRequest,
         @AuthenticationPrincipal jwt: Jwt
-    ) {
-        //TODO  async fun, this will send event to redis
+    ): ResponseEntity<String> {
+        return try {
+            printScriptService.formatSnippet(formatRequest.snippetId, formatRequest.ruleId)
+            ResponseEntity.ok("Snippet formatted successfully")
+        } catch (e: Exception) {
+            logger.error(e.message)
+            ResponseEntity.status(500).body(null)
+        }
+    }
+
+    @GetMapping("/fetch/{snippetId}")
+    fun fetchSnippet(
+        @PathVariable snippetId: String,
+        @AuthenticationPrincipal jwt: Jwt
+    ): ResponseEntity<String> {
+        return try {
+            val result = printScriptService.fetchMultipartFile(snippetId)
+            ResponseEntity.ok(String(result.resource.contentAsByteArray))
+        } catch (e: Exception) {
+            logger.error(e.message)
+            ResponseEntity.status(500).body(null)
+        }
     }
 }
