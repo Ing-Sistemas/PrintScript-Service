@@ -1,6 +1,8 @@
 spring:
   application:
     name: printScript-service
+  constants:
+    asset_url: "${BASE_URL}${ASSET_HOST}:${ASSET_PORT}/${ASSET_URL}"
   security:
     oauth2:
       resourceserver:
