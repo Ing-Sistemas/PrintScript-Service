@@ -1,9 +1,7 @@
 package com.example.springboot.app.service
 
 import com.example.springboot.app.asset.AssetService
-import com.example.springboot.app.utils.ConfigReader
-import com.example.springboot.app.utils.ExecuteResult
-import com.example.springboot.app.utils.ValidationResult
+import com.example.springboot.app.utils.*
 import com.printscript.cli.logic.AnalyzeLogic
 import com.printscript.cli.logic.FormatLogic
 import org.springframework.stereotype.Service
@@ -50,6 +48,51 @@ class PrintScriptService(
             return when (result) {
                 is InterpreterSuccess -> {
                     ExecuteResult(result.getOriginalValue().toString(),null)
+                }
+                is InterpreterFailure -> {
+                    ExecuteResult(null, result.getErrorMessage())
+                }
+                else -> {
+                    ExecuteResult(null, null)
+                }
+            }
+        } catch (e: Exception) {
+            println(e)
+            return ExecuteResult(null, e.message)
+        }
+    }
+
+    fun executeSnippetTest(version: String, snippetId: String, testCase: TestCaseDTO): ExecuteResult {
+        try {
+            val snippet = fetchMultipartFile(snippetId)
+            val defaultInputProvider = DefaultInputProvider()
+            val defaultOutputProvider = DefaultOutPutProvider()
+            val defaultEnvProvider = DefaultEnvProvider()
+
+
+            val expectedOutputs = testCase.output
+            val inputs = testCase.input[0]
+//            for (input in inputs) {
+//                defaultInputProvider.readInput(input)
+//            }
+            defaultInputProvider.readInput(inputs)
+
+            val result = Runner(
+                defaultInputProvider,
+                defaultOutputProvider,
+                defaultEnvProvider
+            ).run(snippet.inputStream, version)
+            return when (result) {
+                is InterpreterSuccess -> {
+                    for (output in expectedOutputs) {
+                        if (result.getOriginalValue().toString() == output) {
+                            ExecuteResult("success", null)
+                        }
+                        else {
+                            ExecuteResult(null, "Output does not match input")
+                        }
+                    }
+                    ExecuteResult(null,null)
                 }
                 is InterpreterFailure -> {
                     ExecuteResult(null, result.getErrorMessage())

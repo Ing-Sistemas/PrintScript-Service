@@ -1,12 +1,17 @@
 package com.example.springboot.app.controller
 
+import com.example.springboot.app.asset.AssetService
 import com.example.springboot.app.service.PrintScriptService
 import com.example.springboot.app.utils.FormatRequest
 import com.example.springboot.app.utils.LintRequest
+import com.example.springboot.app.utils.ExecuteResult
 import com.example.springboot.app.utils.ValidateRequest
 import com.example.springboot.app.utils.ValidateResponse
+import com.example.springboot.app.utils.ValidateTestRequest
+import com.printscript.ast.ASTNode
 import org.springframework.http.ResponseEntity
 import org.slf4j.LoggerFactory
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
@@ -91,6 +96,27 @@ class PrintScriptController(
             ResponseEntity.ok(String(result.resource.contentAsByteArray))
         } catch (e: Exception) {
             logger.error(e.message)
+            ResponseEntity.status(500).body(null)
+        }
+    }
+
+    @PostMapping("/test/run_tests")
+    fun runTests(
+        @RequestBody validateRequest: ValidateTestRequest,
+        @AuthenticationPrincipal jwt: Jwt
+    ) : ResponseEntity<String> {
+        return try {
+            val snippetUse = validateRequest.snippetId
+            val result = printScriptService.executeSnippetTest(
+                "1.1", snippetUse, validateRequest.testCaseDTO
+            )
+            if(result.error != null){
+                ResponseEntity.status(400).body(ValidateResponse(null,result.error).error)
+            } else {
+                ResponseEntity.ok(ValidateResponse("success", null).message)
+            }
+        } catch (e: Exception) {
+            println(e.message)
             ResponseEntity.status(500).body(null)
         }
     }
