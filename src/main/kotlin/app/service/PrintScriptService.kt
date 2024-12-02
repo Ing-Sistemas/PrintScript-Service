@@ -63,49 +63,38 @@ class PrintScriptService(
     }
 
     fun executeSnippetTest(version: String, snippetId: String, testCase: TestCaseDTO): ExecuteResult {
-        try {
+        return try {
             val snippet = fetchMultipartFile(snippetId)
-            val defaultInputProvider = DefaultInputProvider()
-            val defaultOutputProvider = DefaultOutPutProvider()
-            val defaultEnvProvider = DefaultEnvProvider()
+            val inputProvider = DefaultInputProvider()
+            val outputProvider = DefaultOutPutProvider()
+            val envProvider = DefaultEnvProvider()
 
+            testCase.input.forEach { inputProvider.readInput(it) }
 
-            val expectedOutputs = testCase.output
-            val inputs = testCase.input[0]
-//            for (input in inputs) {
-//                defaultInputProvider.readInput(input)
-//            }
-            defaultInputProvider.readInput(inputs)
+            val result = Runner(inputProvider, outputProvider, envProvider).run(snippet.inputStream, version)
 
-            val result = Runner(
-                defaultInputProvider,
-                defaultOutputProvider,
-                defaultEnvProvider
-            ).run(snippet.inputStream, version)
-            return when (result) {
+            when (result) {
                 is InterpreterSuccess -> {
-                    for (output in expectedOutputs) {
-                        if (result.getOriginalValue().toString() == output) {
-                            ExecuteResult("success", null)
-                        }
-                        else {
-                            ExecuteResult(null, "Output does not match input")
-                        }
+                    val actualOutput = result.getOriginalValue().toString()
+                    if (testCase.output.any { it == actualOutput }) {
+                        ExecuteResult("success", null)
+                    } else {
+                        ExecuteResult(null, "Output does not match input")
                     }
-                    ExecuteResult(null,null)
                 }
                 is InterpreterFailure -> {
                     ExecuteResult(null, result.getErrorMessage())
                 }
                 else -> {
-                    ExecuteResult(null, null)
+                    ExecuteResult(null, "Unexpected runner result")
                 }
             }
         } catch (e: Exception) {
-            println(e)
-            return ExecuteResult(null, e.message)
+            println("Error executing snippet test: ${e.message}")
+            ExecuteResult(null, e.message)
         }
     }
+
 
     fun lintSnippet(snippetId: String, configId: String): List<String> {
         val snippet = fetchMultipartFile(snippetId)
