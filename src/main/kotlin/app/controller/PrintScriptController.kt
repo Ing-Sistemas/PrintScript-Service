@@ -100,7 +100,7 @@ class PrintScriptController(
         }
     }
 
-    @PostMapping("/test/run_tests")
+    @PutMapping("/test/run_tests")
     fun runTests(
         @RequestBody validateRequest: ValidateTestRequest,
         @AuthenticationPrincipal jwt: Jwt
