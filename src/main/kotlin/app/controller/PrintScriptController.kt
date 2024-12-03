@@ -106,11 +106,12 @@ class PrintScriptController(
         @AuthenticationPrincipal jwt: Jwt
     ) : ResponseEntity<String> {
         return try {
-            val snippetUse = validateRequest.snippetId
+            val snippetUse = validateRequest.sId
             val result = printScriptService.executeSnippetTest(
                 "1.1", snippetUse, validateRequest.testCaseDTO
             )
             if(result.error != null){
+                logger.info("Fails here?")
                 ResponseEntity.status(400).body(ValidateResponse(null,result.error).error)
             } else {
                 ResponseEntity.ok(ValidateResponse("success", null).message)

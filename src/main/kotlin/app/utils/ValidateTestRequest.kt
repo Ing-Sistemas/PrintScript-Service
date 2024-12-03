@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull
 
 data class ValidateTestRequest (
     val testCaseDTO: TestCaseDTO,
-    val snippetId: String
+    val sId: String
 )
 
 data class TestCaseDTO (
