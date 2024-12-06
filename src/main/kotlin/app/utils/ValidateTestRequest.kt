@@ -3,16 +3,15 @@ package com.example.springboot.app.utils
 import org.jetbrains.annotations.NotNull
 
 data class ValidateTestRequest (
-    val testCaseDTO: TestCaseDTO,
+    val testCaseDTO: AddTestCaseDTO,
     val sId: String
 )
 
-data class TestCaseDTO (
+data class AddTestCaseDTO (
     val id: String,
     val name: String,
     val input: List<String>,
     val output: List<String>,
-    val status: TestStatus?,
 )
 
 data class SnippetEntity(
