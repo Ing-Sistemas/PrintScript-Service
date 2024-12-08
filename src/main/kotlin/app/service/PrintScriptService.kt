@@ -62,7 +62,7 @@ class PrintScriptService(
         }
     }
 
-    fun executeSnippetTest(version: String, snippetId: String, testCase: AddTestCaseDTO): ExecuteResult {
+    fun executeSnippetTest(version: String, snippetId: String, testCase: RunTestDTO): ExecuteResult {
         return try {
             val snippet = fetchMultipartFile(snippetId)
             val inputProvider = DefaultInputProvider()
