@@ -1,7 +1,5 @@
 package com.example.springboot.app.utils
 
-import org.jetbrains.annotations.NotNull
-
 data class ValidateTestRequest (
     val testCaseDTO: RunTestDTO,
     val sId: String
@@ -12,7 +10,14 @@ data class RunTestDTO (
     val name: String,
     val input: List<String>,
     val output: List<String>,
+    val status: TestStatus? = null
 )
+
+enum class TestStatus {
+    PENDING,
+    SUCCESS,
+    FAIL
+}
 
 //data class SnippetEntity(
 //    val id: String,

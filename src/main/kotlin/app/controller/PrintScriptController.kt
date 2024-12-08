@@ -100,7 +100,7 @@ class PrintScriptController(
         }
     }
 
-    @PutMapping("/test/run_tests")
+    @PostMapping("/test/run_tests")
     fun runTests(
         @RequestBody validateRequest: ValidateTestRequest,
         @AuthenticationPrincipal jwt: Jwt
@@ -111,13 +111,13 @@ class PrintScriptController(
                 "1.1", snippetUse, validateRequest.testCaseDTO
             )
             if(result.error != null){
-                logger.info("Fails here?")
-                ResponseEntity.status(400).body(ValidateResponse(null,result.error).error)
+                logger.error("Fails hereeee")
+                ResponseEntity.status(400).body(ValidateResponse(null, result.error).error)
             } else {
                 ResponseEntity.ok(ValidateResponse("success", null).message)
             }
         } catch (e: Exception) {
-            println(e.message)
+            logger.error("Error at run test method in ps contr: ${ e.message }")
             ResponseEntity.status(500).body(null)
         }
     }
