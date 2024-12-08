@@ -73,7 +73,7 @@ class PrintScriptController(
         @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<String> {
         return try {
-            printScriptService.formatSnippet(formatRequest.snippetId, formatRequest.ruleId)
+            printScriptService.formatSnippet(formatRequest.snippetId, formatRequest.config)
             ResponseEntity.ok("Snippet formatted successfully")
         } catch (e: Exception) {
             logger.error(e.message)

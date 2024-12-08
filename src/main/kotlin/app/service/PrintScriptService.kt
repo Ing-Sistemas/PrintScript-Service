@@ -1,6 +1,7 @@
 package com.example.springboot.app.service
 
 import com.example.springboot.app.asset.AssetService
+import com.example.springboot.app.controller.PrintScriptController
 import com.example.springboot.app.utils.ConfigReader
 import com.example.springboot.app.utils.ExecuteResult
 import com.example.springboot.app.utils.ValidationResult
@@ -8,12 +9,14 @@ import com.printscript.cli.logic.AnalyzeLogic
 import com.printscript.cli.logic.FormatLogic
 import org.springframework.stereotype.Service
 import com.printscript.cli.logic.ValidateLogic
+import com.printscript.formatter.config.FormatterConfig
 import com.printscript.interpreter.providers.DefaultEnvProvider
 import com.printscript.interpreter.providers.DefaultInputProvider
 import com.printscript.interpreter.providers.DefaultOutPutProvider
 import com.printscript.interpreter.results.InterpreterFailure
 import com.printscript.interpreter.results.InterpreterSuccess
 import com.printscript.runner.Runner
+import org.slf4j.LoggerFactory
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
@@ -23,7 +26,7 @@ import java.nio.file.Files
 class PrintScriptService(
     private val assetService: AssetService
 ) {
-
+    private val logger = LoggerFactory.getLogger(PrintScriptService::class.java)
     fun validateSnippet(version: String, snippetId: String): ValidationResult {
         try {
             val snippet = fetchMultipartFile(snippetId)
@@ -67,13 +70,16 @@ class PrintScriptService(
     fun lintSnippet(snippetId: String, configId: String): List<String> {
         val snippet = fetchMultipartFile(snippetId)
         val config = genFile(fetchMultipartFile(configId), "json")
+        logger.info("Linting snippet with config: $config")
         return AnalyzeLogic().analyse("1.1", snippet.inputStream, config)
     }
 
-    fun formatSnippet(snippetId: String, configId: String) {
+    fun formatSnippet(snippetId: String, config: FormatterConfig) {
         val snippet = genFile(fetchMultipartFile(snippetId), "ps")
-        val config = ConfigReader().readConfig(genFile(fetchMultipartFile(configId), "json"))
+        //val config = ConfigReader().readConfig(genFile(fetchMultipartFile(configId), "json"))
+        logger.info("Formatting snippet with config: $config")
         FormatLogic().format("1.1", snippet, config)
+        logger.info("Snippet formatted successfully")
         assetService.saveSnippet(snippetId, genMultiPartFile(snippet))
     }
 

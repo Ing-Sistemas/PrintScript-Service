@@ -26,6 +26,8 @@ class OAuth2ResourceServerSecurityConfiguration(@Value("\${auth0.audience}")
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http.authorizeHttpRequests {
             it
+                .requestMatchers(GET, "/api/health/ping").anonymous()
+                .requestMatchers(GET, "/api/health/check").anonymous()
                 .requestMatchers("/").permitAll()
                 .requestMatchers(GET, "/api/test").permitAll()
                 .requestMatchers(POST,"/api/validate").permitAll()
