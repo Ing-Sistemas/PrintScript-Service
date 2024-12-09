@@ -1,12 +1,10 @@
 package com.example.springboot.app.controller
 
 import com.example.springboot.app.service.PrintScriptService
-import com.example.springboot.app.utils.FormatRequest
-import com.example.springboot.app.utils.LintRequest
-import com.example.springboot.app.utils.ValidateRequest
-import com.example.springboot.app.utils.ValidateResponse
+import com.example.springboot.app.utils.*
 import org.springframework.http.ResponseEntity
 import org.slf4j.LoggerFactory
+import org.springframework.http.MediaType
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
@@ -74,10 +72,10 @@ class PrintScriptController(
     ): ResponseEntity<String> {
         return try {
             printScriptService.formatSnippet(formatRequest.snippetId, formatRequest.config)
-            ResponseEntity.ok("Snippet formatted successfully")
+            ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN).body("Snippet formatted successfully")
         } catch (e: Exception) {
             logger.error(e.message)
-            ResponseEntity.status(500).body(null)
+            ResponseEntity.status(500).contentType(MediaType.TEXT_PLAIN).body(e.message!!)
         }
     }
 
