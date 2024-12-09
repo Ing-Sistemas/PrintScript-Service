@@ -1,9 +1,7 @@
 package com.example.springboot.app.service
 
 import com.example.springboot.app.asset.AssetService
-import com.example.springboot.app.utils.ConfigReader
-import com.example.springboot.app.utils.ExecuteResult
-import com.example.springboot.app.utils.ValidationResult
+import com.example.springboot.app.utils.*
 import com.printscript.cli.logic.AnalyzeLogic
 import com.printscript.cli.logic.FormatLogic
 import org.springframework.stereotype.Service
@@ -63,6 +61,35 @@ class PrintScriptService(
             return ExecuteResult(null, e.message)
         }
     }
+
+    fun executeSnippetTest(version: String, sId: String, testCase: RunTestDTO): ExecuteResult {
+        return try {
+            val snippet = fetchMultipartFile(sId)
+            val inputProvider = RunnerInputProv(testCase.input)
+            val outputProvider = RunnerOutPutProv()
+            val envProvider = RunnerEnvProv()
+
+            val runner = Runner(inputProvider, outputProvider, envProvider)
+
+            val result = runner.run(snippet.inputStream, version )
+
+            when (result) {
+                is InterpreterSuccess -> {
+                    ExecuteResult(result.getOriginalValue().toString(), null)
+                }
+                is InterpreterFailure -> {
+                    ExecuteResult(null, result.getErrorMessage())
+                }
+                else -> {
+                    ExecuteResult(null, "Unexpected runner result")
+                }
+            }
+        } catch (e: Exception) {
+            println("Error executing snippet test: ${e.message}")
+            ExecuteResult(null, e.message)
+        }
+    }
+
 
     fun lintSnippet(snippetId: String, configId: String): List<String> {
         val snippet = fetchMultipartFile(snippetId)
