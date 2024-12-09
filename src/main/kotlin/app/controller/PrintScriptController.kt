@@ -113,7 +113,10 @@ class PrintScriptController(
                 logger.error("Fails in PS controller runTests: ${result.error}")
                 ResponseEntity.status(400).contentType(MediaType.TEXT_PLAIN).body("fail: ${result.error}")
             } else {
-                ResponseEntity.ok(ValidateResponse(result.output, null).message)
+                logger.info("The result is: ${ValidateResponse(result.output, null).message}")
+                ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(ValidateResponse(result.output, null).message)
             }
         } catch (e: Exception) {
             logger.error("Error at run test method in ps contr: ${ e.message }")

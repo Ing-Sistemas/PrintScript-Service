@@ -65,22 +65,17 @@ class PrintScriptService(
     fun executeSnippetTest(version: String, sId: String, testCase: RunTestDTO): ExecuteResult {
         return try {
             val snippet = fetchMultipartFile(sId)
-            val inputProvider = DefaultInputProvider()
-            val outputProvider = DefaultOutPutProvider()
-            val envProvider = DefaultEnvProvider()
+            val inputProvider = RunnerInputProv(testCase.input)
+            val outputProvider = RunnerOutPutProv()
+            val envProvider = RunnerEnvProv()
 
-            testCase.input?.forEach { inputProvider.readInput(it) }
+            val runner = Runner(inputProvider, outputProvider, envProvider)
 
-            val result = Runner(inputProvider, outputProvider, envProvider).run(snippet.inputStream, version)
+            val result = runner.run(snippet.inputStream, version )
 
             when (result) {
                 is InterpreterSuccess -> {
-                    val actualOutput = result.getOriginalValue().toString()
-                    if (testCase.output?.any { it == actualOutput } == true) {
-                        ExecuteResult("success", null)
-                    } else {
-                        ExecuteResult("fail", null)
-                    }
+                    ExecuteResult(result.getOriginalValue().toString(), null)
                 }
                 is InterpreterFailure -> {
                     ExecuteResult(null, result.getErrorMessage())

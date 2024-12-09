@@ -3,8 +3,8 @@ package com.example.springboot.app.utils
 data class RunTestDTO (
     val id: String?,
     val name: String?,
-    val input: List<String>?,
-    val output: List<String>?,
+    val input: List<String>,
+    val output: List<String>,
     val status: TestStatus? = null
 )
 
