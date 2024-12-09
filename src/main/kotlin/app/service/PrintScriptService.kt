@@ -62,24 +62,24 @@ class PrintScriptService(
         }
     }
 
-    fun executeSnippetTest(version: String, snippetId: String, testCase: RunTestDTO): ExecuteResult {
+    fun executeSnippetTest(version: String, sId: String, testCase: RunTestDTO): ExecuteResult {
         return try {
-            val snippet = fetchMultipartFile(snippetId)
+            val snippet = fetchMultipartFile(sId)
             val inputProvider = DefaultInputProvider()
             val outputProvider = DefaultOutPutProvider()
             val envProvider = DefaultEnvProvider()
 
-            testCase.input.forEach { inputProvider.readInput(it) }
+            testCase.input?.forEach { inputProvider.readInput(it) }
 
             val result = Runner(inputProvider, outputProvider, envProvider).run(snippet.inputStream, version)
 
             when (result) {
                 is InterpreterSuccess -> {
                     val actualOutput = result.getOriginalValue().toString()
-                    if (testCase.output.any { it == actualOutput }) {
+                    if (testCase.output?.any { it == actualOutput } == true) {
                         ExecuteResult("success", null)
                     } else {
-                        ExecuteResult(null, "Output does not match input")
+                        ExecuteResult("fail", null)
                     }
                 }
                 is InterpreterFailure -> {

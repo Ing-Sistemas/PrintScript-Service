@@ -2,15 +2,11 @@ package com.example.springboot.app.controller
 
 import com.example.springboot.app.asset.AssetService
 import com.example.springboot.app.service.PrintScriptService
-import com.example.springboot.app.utils.FormatRequest
-import com.example.springboot.app.utils.LintRequest
-import com.example.springboot.app.utils.ExecuteResult
-import com.example.springboot.app.utils.ValidateRequest
-import com.example.springboot.app.utils.ValidateResponse
-import com.example.springboot.app.utils.ValidateTestRequest
+import com.example.springboot.app.utils.*
 import com.printscript.ast.ASTNode
 import org.springframework.http.ResponseEntity
 import org.slf4j.LoggerFactory
+import org.springframework.http.MediaType
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
@@ -100,25 +96,28 @@ class PrintScriptController(
         }
     }
 
-    @PostMapping("/test/run_tests")
+    @PostMapping("/test/run_tests/{sId}")
     fun runTests(
-        @RequestBody validateRequest: ValidateTestRequest,
+        @PathVariable sId: String,
+        @RequestBody runTestDTO: RunTestDTO,
         @AuthenticationPrincipal jwt: Jwt
     ) : ResponseEntity<String> {
         return try {
-            val snippetUse = validateRequest.sId
             val result = printScriptService.executeSnippetTest(
-                "1.1", snippetUse, validateRequest.testCaseDTO
+                "1.1", sId, runTestDTO
             )
+            logger.info(result.error)
+            logger.info(result.output)
             if(result.error != null){
-                logger.error("Fails hereeee")
-                ResponseEntity.status(400).body(ValidateResponse(null, result.error).error)
+                logger.info(result.error)
+                logger.error("Fails in PS controller runTests: ${result.error}")
+                ResponseEntity.status(400).contentType(MediaType.TEXT_PLAIN).body("fail: ${result.error}")
             } else {
-                ResponseEntity.ok(ValidateResponse("success", null).message)
+                ResponseEntity.ok(ValidateResponse(result.output, null).message)
             }
         } catch (e: Exception) {
             logger.error("Error at run test method in ps contr: ${ e.message }")
-            ResponseEntity.status(500).body(null)
+            ResponseEntity.status(500).body(null + "Error in ps: ${e.message}")
         }
     }
 }

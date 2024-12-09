@@ -1,15 +1,10 @@
 package com.example.springboot.app.utils
 
-data class ValidateTestRequest (
-    val testCaseDTO: RunTestDTO,
-    val sId: String
-)
-
 data class RunTestDTO (
-    val id: String,
-    val name: String,
-    val input: List<String>,
-    val output: List<String>,
+    val id: String?,
+    val name: String?,
+    val input: List<String>?,
+    val output: List<String>?,
     val status: TestStatus? = null
 )
 
