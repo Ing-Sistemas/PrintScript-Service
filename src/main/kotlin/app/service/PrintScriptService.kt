@@ -71,7 +71,6 @@ class PrintScriptService(
         try {
             val snippet = fetchMultipartFile(snippetId)
             val config = genFile(fetchMultipartFile(configId), "json")
-            logger.info("Linting snippet with config: $config")
             return AnalyzeLogic().analyse("1.1", snippet.inputStream, config)
         } catch (e: Exception) {
             logger.error("Error linting snippet: {}", e.message)
@@ -82,10 +81,8 @@ class PrintScriptService(
     fun formatSnippet(snippetId: String, config: FormatterConfig) {
         try {
             val snippet = genFile(fetchMultipartFile(snippetId), "ps")
-            logger.info("Formatting snippet with config: $config")
             println(String(snippet.readBytes()))
             FormatLogic().format("1.1", snippet, config)
-            logger.info("Snippet formatted successfully")
             assetService.saveSnippet(snippetId, genMultiPartFile(snippet))
         } catch (e: Exception) {
             logger.error("Error formatting snippet: {}", e.message)
