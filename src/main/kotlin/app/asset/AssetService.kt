@@ -24,7 +24,6 @@ class AssetService @Autowired constructor(
         .build()
 
     fun saveSnippet(snippetId: String, snippetFile: MultipartFile): ResponseEntity<String> {
-        logger.info("Saving snippet with id: $snippetId")
         val container = "test-container" //CHANGE
         return try {
 
@@ -37,7 +36,6 @@ class AssetService @Autowired constructor(
                 .toEntity(String::class.java)
                 .block()!!
 
-            logger.info("Response: $response")
             response
         } catch (e: Exception) {
             logger.error("Failed to save snippet: ${e.message}")
