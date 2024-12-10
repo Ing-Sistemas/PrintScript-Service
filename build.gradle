@@ -80,7 +80,10 @@ jacocoTestReport {
     classDirectories.setFrom(
             fileTree(
                     dir: 'build/classes/java/main',
-                    exclude: ['com/example/springboot/app/controllers/**']
+                    exclude: [
+                            "com/example/springboot/app/controller/**",
+                            "com/example/springboot/app/auth/**",
+                    ]
             )
     )
 }
@@ -91,8 +94,8 @@ jacocoTestCoverageVerification {
             fileTree(
                     dir: 'build/classes/kotlin/main',
                     exclude: [
-                            'com/example/springboot/app/controllers/**',
-                            'com/example/springboot/app/auth/**'
+                            "com/example/springboot/app/controller/**",
+                            "com/example/springboot/app/auth/**",
                     ]
             )
     )
