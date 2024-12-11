@@ -43,6 +43,10 @@ class AssetServiceTest {
         val mockFile = MockMultipartFile("file", "test.txt", MediaType.TEXT_PLAIN_VALUE, "content".toByteArray())
         val responseEntity = ResponseEntity.ok("Success")
 
+        val mockRequestBodyUriSpec: WebClient.RequestBodyUriSpec = mock(WebClient.RequestBodyUriSpec::class.java)
+
+        `when`(mockWebClient.put()).thenReturn(mockRequestBodyUriSpec)
+        `when`(mockRequestBodyUriSpec.uri("/{container}/{snippetId}", "test-container", snippetId)).thenReturn(mockRequestBodySpec)
         `when`(mockRequestBodySpec.header("accept", "*/*")).thenReturn(mockRequestBodySpec)
         `when`(mockRequestBodySpec.contentType(MediaType.MULTIPART_FORM_DATA)).thenReturn(mockRequestBodySpec)
         `when`(mockRequestBodySpec.bodyValue(mockFile.bytes)).thenReturn(mockRequestHeadersSpec)
@@ -51,20 +55,43 @@ class AssetServiceTest {
 
         val response = assetService.saveSnippet(snippetId, mockFile)
 
-        assertEquals(HttpStatus.OK, HttpStatus.OK)
-        assertEquals("Success", "Success")
+        assertEquals(HttpStatus.OK, response.statusCode)
+        assertEquals("Success", response.body)
         verify(mockWebClient).put()
+        verify(mockRequestBodyUriSpec).uri("/{container}/{snippetId}", "test-container", snippetId)
     }
 
     @Test
-    fun `test saveSnippet failure`() {
+    fun `test getSnippet successfully`() {
+        val snippetId = "testSnippet"
+        val mockFileBytes = "content".toByteArray()
+        val mockRequestHeadersUriSpec: WebClient.RequestHeadersUriSpec<*> = mock(WebClient.RequestHeadersUriSpec::class.java)
+
+        `when`(mockWebClient.get()).thenReturn(mockRequestHeadersUriSpec)
+        `when`(mockRequestHeadersUriSpec.uri("/{container}/{snippetId}", "test-container", snippetId)).thenReturn(mockRequestHeadersSpec)
+        `when`(mockRequestHeadersSpec.accept(MediaType.APPLICATION_OCTET_STREAM)).thenReturn(mockRequestHeadersSpec)
+        `when`(mockRequestHeadersSpec.retrieve()).thenReturn(mockResponseSpec)
+        `when`(mockResponseSpec.bodyToMono(ByteArray::class.java)).thenReturn(Mono.just(mockFileBytes))
+
+        val response = assetService.getSnippet(snippetId)
+
+        assertEquals(HttpStatus.OK, response.statusCode)
+        assertNotNull(response.body)
+        assertArrayEquals(mockFileBytes, response.body!!.bytes)
+        verify(mockWebClient).get()
+        verify(mockRequestHeadersUriSpec).uri("/{container}/{snippetId}", "test-container", snippetId)
+    }
+
+    @Test
+    fun `test saveSnippet throws exception during request building`() {
         val snippetId = "testSnippet"
         val mockFile = MockMultipartFile("file", "test.txt", MediaType.TEXT_PLAIN_VALUE, "content".toByteArray())
 
-        `when`(mockRequestBodySpec.header("accept", "*/*")).thenReturn(mockRequestBodySpec)
-        `when`(mockRequestBodySpec.contentType(MediaType.MULTIPART_FORM_DATA)).thenReturn(mockRequestBodySpec)
-        `when`(mockRequestBodySpec.bodyValue(mockFile.bytes)).thenReturn(mockRequestHeadersSpec)
-        `when`(mockRequestHeadersSpec.retrieve()).thenThrow(RuntimeException("Failed to save snippet"))
+        val mockRequestBodyUriSpec: WebClient.RequestBodyUriSpec = mock(WebClient.RequestBodyUriSpec::class.java)
+
+        `when`(mockWebClient.put()).thenReturn(mockRequestBodyUriSpec)
+        `when`(mockRequestBodyUriSpec.uri("/{container}/{snippetId}", "test-container", snippetId))
+            .thenThrow(RuntimeException("URI building failed"))
 
         val response = assetService.saveSnippet(snippetId, mockFile)
 
@@ -74,27 +101,35 @@ class AssetServiceTest {
     }
 
     @Test
-    fun `test getSnippet successfully`() {
+    fun `test saveSnippet throws exception during request execution`() {
         val snippetId = "testSnippet"
-        val mockFileBytes = "content".toByteArray()
+        val mockFile = MockMultipartFile("file", "test.txt", MediaType.TEXT_PLAIN_VALUE, "content".toByteArray())
 
-        `when`(mockRequestHeadersSpec.accept(MediaType.APPLICATION_OCTET_STREAM)).thenReturn(mockRequestHeadersSpec)
-        `when`(mockRequestHeadersSpec.retrieve()).thenReturn(mockResponseSpec)
-        `when`(mockResponseSpec.bodyToMono(ByteArray::class.java)).thenReturn(Mono.just(mockFileBytes))
+        val mockRequestBodyUriSpec: WebClient.RequestBodyUriSpec = mock(WebClient.RequestBodyUriSpec::class.java)
 
-        val response = assetService.getSnippet(snippetId)
+        `when`(mockWebClient.put()).thenReturn(mockRequestBodyUriSpec)
+        `when`(mockRequestBodyUriSpec.uri("/{container}/{snippetId}", "test-container", snippetId))
+            .thenReturn(mockRequestBodySpec)
+        `when`(mockRequestBodySpec.header("accept", "*/*")).thenReturn(mockRequestBodySpec)
+        `when`(mockRequestBodySpec.contentType(MediaType.MULTIPART_FORM_DATA)).thenReturn(mockRequestBodySpec)
+        `when`(mockRequestBodySpec.bodyValue(mockFile.bytes))
+            .thenThrow(RuntimeException("Request execution failed"))
 
-        assertEquals(HttpStatus.OK, HttpStatus.OK)
-        assertEquals(mockFileBytes.size, mockFileBytes.size)
-        verify(mockWebClient).get()
+        val response = assetService.saveSnippet(snippetId, mockFile)
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        assertTrue(response.body!!.contains("Failed to save snippet"))
+        verify(mockWebClient).put()
     }
 
     @Test
-    fun `test getSnippet failure`() {
+    fun `test getSnippet throws exception during URI building`() {
         val snippetId = "testSnippet"
+        val mockRequestHeadersUriSpec: WebClient.RequestHeadersUriSpec<*> = mock(WebClient.RequestHeadersUriSpec::class.java)
 
-        `when`(mockRequestHeadersSpec.accept(MediaType.APPLICATION_OCTET_STREAM)).thenReturn(mockRequestHeadersSpec)
-        `when`(mockRequestHeadersSpec.retrieve()).thenThrow(RuntimeException("Failed to retrieve snippet"))
+        `when`(mockWebClient.get()).thenReturn(mockRequestHeadersUriSpec)
+        `when`(mockRequestHeadersUriSpec.uri("/{container}/{snippetId}", "test-container", snippetId))
+            .thenThrow(RuntimeException("URI building failed"))
 
         val response = assetService.getSnippet(snippetId)
 
@@ -102,4 +137,26 @@ class AssetServiceTest {
         assertNull(response.body)
         verify(mockWebClient).get()
     }
+
+    @Test
+    fun `test getSnippet throws exception during request execution`() {
+        val snippetId = "testSnippet"
+        val mockRequestHeadersUriSpec: WebClient.RequestHeadersUriSpec<*> = mock(WebClient.RequestHeadersUriSpec::class.java)
+
+        `when`(mockWebClient.get()).thenReturn(mockRequestHeadersUriSpec)
+        `when`(mockRequestHeadersUriSpec.uri("/{container}/{snippetId}", "test-container", snippetId))
+            .thenReturn(mockRequestHeadersSpec)
+        `when`(mockRequestHeadersSpec.accept(MediaType.APPLICATION_OCTET_STREAM)).thenReturn(mockRequestHeadersSpec)
+        `when`(mockRequestHeadersSpec.retrieve())
+            .thenThrow(RuntimeException("Request execution failed"))
+
+        val response = assetService.getSnippet(snippetId)
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        assertNull(response.body)
+        verify(mockWebClient).get()
+    }
+
+
+
 }

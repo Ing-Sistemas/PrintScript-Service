@@ -1,7 +1,9 @@
 import com.example.springboot.app.asset.AssetService
 import com.example.springboot.app.service.PrintScriptService
 import com.example.springboot.app.utils.*
-import org.junit.jupiter.api.Assertions.assertNull
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
@@ -10,6 +12,8 @@ import org.mockito.Mockito.*
 import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.http.ResponseEntity
 import org.springframework.mock.web.MockMultipartFile
+import java.nio.file.Files
+import java.nio.file.Paths
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -51,7 +55,7 @@ class PrintScriptServiceTest {
 
     @Test
     fun `should execute snippet test successfully`() {
-        val runTestDTO = RunTestDTO("input", null, emptyList(), emptyList(), null)
+        val runTestDTO = RunTestDTO("input", null, emptyList(), emptyList(), TestStatus.PENDING)
         `when`(assetService.getSnippet("snippetId")).thenReturn(ResponseEntity.ok(mockFile))
 
         val result = printScriptService.executeSnippetTest("1.1", "snippetId", runTestDTO)
@@ -62,7 +66,7 @@ class PrintScriptServiceTest {
     fun `should return error when snippet test execution fails`() {
         `when`(assetService.getSnippet("snippetId")).thenThrow(RuntimeException("Execution error"))
 
-        val runTestDTO = RunTestDTO("input", null, emptyList(), emptyList(), null)
+        val runTestDTO = RunTestDTO("input", null, emptyList(), emptyList(), TestStatus.FAIL)
         val result = printScriptService.executeSnippetTest("1.1", "snippetId", runTestDTO)
         assertEquals("Execution error", result.error)
     }
@@ -92,9 +96,17 @@ class PrintScriptServiceTest {
     @Test
     fun `should return null output and error for unknown interpreter result`() {
         val snippetContent = "unknown result"
+        val objectMapper = ObjectMapper()
+        val jsonFilePath = Paths.get("src/test/kotlin/utils/formatterConfig.json")
+        val jsonFormatter: JsonNode = objectMapper.readTree(Files.newBufferedReader(jsonFilePath))
+
+
+        val jsonFilePath2 = Paths.get("src/test/kotlin/utils/linterConfig.json")
+        val jsonLinter: JsonNode = objectMapper.readTree(Files.newBufferedReader(jsonFilePath))
+
         val mockFile = MockMultipartFile("file", snippetContent.toByteArray())
-        val formatRequest = FormatRequest("id", "userID", "ruleId")
-        val lintRequest = LintRequest("id", "ruleId", "userId")
+        val formatRequest = FormatRequest("id", jsonFormatter)
+        val lintRequest = LintRequest("id", jsonLinter)
         val validateRequest = ValidateRequest("1.1", "sId")
         val validateResponse = ValidateResponse(null, null)
 
@@ -129,4 +141,61 @@ class PrintScriptServiceTest {
         assertEquals(tempFile.name, multipartFile.name)
     }
 
+    @Test
+    fun `should lint snippet successfully`() {
+        val configJson = ObjectMapper().createObjectNode().put("name", "testRule").put("value", "true").put("isActive", true)
+        `when`(assetService.getSnippet("snippetId")).thenReturn(ResponseEntity.ok(mockFile))
+
+        val result = printScriptService.lintSnippet("snippetId", configJson)
+        assertNotNull(result)
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `should handle lint snippet error`() {
+        val runnerOutPutProv = RunnerOutPutProv()
+        runnerOutPutProv.output("success")
+        val configJson = ObjectMapper().createObjectNode()
+        `when`(assetService.getSnippet("snippetId")).thenThrow(RuntimeException("Lint error"))
+
+        val result = printScriptService.lintSnippet("snippetId", configJson)
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `should format snippet successfully`() {
+        val formatResponse = FormatResponse("success")
+        val runnerEnvProv = RunnerEnvProv()
+        runnerEnvProv.getEnv("")
+
+        val configJson = ObjectMapper().createObjectNode().put("name", "spaceBeforeColon").put("value", true).put("isActive", true)
+
+        assertDoesNotThrow {
+            printScriptService.formatSnippet("snippetId", configJson)
+        }
+    }
+
+
+    @Test
+    fun `should create Json file from map`() {
+        val runnerInputProv = RunnerInputProv(listOf("Enter name: "))
+        runnerInputProv.readInput("hello")
+
+        val configMap = mapOf("spaceBeforeColon" to "true")
+        val result = printScriptService.toJsonFile(configMap)
+        assertTrue(result.exists())
+        assertTrue(result.readText().contains("spaceBeforeColon"))
+    }
+
+    @Test
+    fun `should generate FormatterConfig from map`() {
+        val configMap = mapOf(
+            "spaceBeforeColon" to "true",
+            "lineJumpAfterSemicolon" to "false"
+        )
+
+        val result = printScriptService.genConfig(configMap)
+        assertTrue(result.spaceBeforeColon!!)
+        assertFalse(result.lineJumpAfterSemicolon)
+    }
 }

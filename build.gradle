@@ -79,10 +79,11 @@ jacocoTestReport {
     }
     classDirectories.setFrom(
             fileTree(
-                    dir: 'build/classes/java/main',
+                    dir: 'build/classes/kotlin/main',
                     exclude: [
-                            "com/example/springboot/app/controller/**",
                             "com/example/springboot/app/auth/**",
+                            "com/example/springboot/app/configuration/**",
+                            "com/example/springboot/app/controller/**",
                     ]
             )
     )
@@ -94,8 +95,12 @@ jacocoTestCoverageVerification {
             fileTree(
                     dir: 'build/classes/kotlin/main',
                     exclude: [
-                            "com/example/springboot/app/controller/**",
                             "com/example/springboot/app/auth/**",
+                            "com/example/springboot/app/configuration/**",
+                            "com/example/springboot/app/controller/**",
+                            "com/example/springboot/ApplicationKt.class",
+                            "com/example/springboot/PrintScriptServiceApplication.class",
+                            "META-INF/printScript-service.kotlin_module",
                     ]
             )
     )
