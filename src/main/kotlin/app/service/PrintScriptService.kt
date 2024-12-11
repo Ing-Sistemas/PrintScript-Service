@@ -97,10 +97,6 @@ class PrintScriptService(
     }
 
 
-    fun lintSnippet(snippetId: String, configId: String): List<String> {
-        val snippet = fetchMultipartFile(snippetId)
-        val config = genFile(fetchMultipartFile(configId), "json")
-        return AnalyzeLogic().analyse("1.1", snippet.inputStream, config)
     fun lintSnippet(snippetId: String, configJson: JsonNode): List<String> {
         try {
             val snippet = fetchMultipartFile(snippetId)
