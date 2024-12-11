@@ -60,7 +60,7 @@ class PrintScriptController(
     ): ResponseEntity<List<String>> {
         return try {
             logger.trace("Linting snippet with id: ${lintRequest.snippetId}")
-            val result = printScriptService.lintSnippet(lintRequest.snippetId,lintRequest.snippetId)
+            val result = printScriptService.lintSnippet(lintRequest.snippetId,lintRequest.rules)
             ResponseEntity.ok(result)
         } catch (e: Exception) {
             logger.error(e.message)

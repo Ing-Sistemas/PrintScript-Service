@@ -1,8 +1,8 @@
 package com.example.springboot.app.utils
 
-import com.printscript.formatter.config.FormatterConfig
+import com.fasterxml.jackson.databind.JsonNode
 
 data class FormatRequest(
     val snippetId: String,
-    val config: FormatterConfig
+    val config: JsonNode
 )
