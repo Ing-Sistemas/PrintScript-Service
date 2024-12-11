@@ -3,6 +3,7 @@ package com.example.springboot.app.controller
 import com.example.springboot.app.asset.AssetService
 import com.example.springboot.app.service.PrintScriptService
 import com.example.springboot.app.utils.*
+import com.example.springboot.app.utils.*
 import com.printscript.ast.ASTNode
 import org.springframework.http.ResponseEntity
 import org.slf4j.LoggerFactory
@@ -24,6 +25,7 @@ class PrintScriptController(
         @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<ValidateResponse> {
         return try {
+            logger.trace("Validating snippet with id: ${validateRequest.snippetId}")
             val result = printScriptService.validateSnippet(validateRequest.version, validateRequest.snippetId)
             if(result.error != null){
                 ResponseEntity.status(400).body(ValidateResponse(null,result.error))
@@ -42,6 +44,7 @@ class PrintScriptController(
         @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<ValidateResponse> {
         return try {
+            logger.trace("Executing snippet with id: ${validateRequest.snippetId}")
             val result = printScriptService.executeSnippet(validateRequest.version, validateRequest.snippetId)
             if(result.error != null){
                 ResponseEntity.status(400).body(ValidateResponse(null,result.error))
@@ -60,7 +63,8 @@ class PrintScriptController(
         @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<List<String>> {
         return try {
-            val result = printScriptService.lintSnippet(lintRequest.snippetId,lintRequest.snippetId)
+            logger.trace("Linting snippet with id: ${lintRequest.snippetId}")
+            val result = printScriptService.lintSnippet(lintRequest.snippetId,lintRequest.rules)
             ResponseEntity.ok(result)
         } catch (e: Exception) {
             logger.error(e.message)
@@ -74,11 +78,12 @@ class PrintScriptController(
         @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<String> {
         return try {
-            printScriptService.formatSnippet(formatRequest.snippetId, formatRequest.ruleId)
-            ResponseEntity.ok("Snippet formatted successfully")
+            logger.trace("Formatting snippet with id: ${formatRequest.snippetId}")
+            printScriptService.formatSnippet(formatRequest.snippetId, formatRequest.config)
+            ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN).body("Snippet formatted successfully")
         } catch (e: Exception) {
             logger.error(e.message)
-            ResponseEntity.status(500).body(null)
+            ResponseEntity.status(500).contentType(MediaType.TEXT_PLAIN).body(e.message!!)
         }
     }
 
@@ -88,6 +93,7 @@ class PrintScriptController(
         @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<String> {
         return try {
+            logger.trace("Fetching snippet with id: $snippetId")
             val result = printScriptService.fetchMultipartFile(snippetId)
             ResponseEntity.ok(String(result.resource.contentAsByteArray))
         } catch (e: Exception) {

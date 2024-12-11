@@ -1,32 +1,38 @@
 package com.example.springboot.app.service
 
 import com.example.springboot.app.asset.AssetService
+import com.example.springboot.app.utils.ExecuteResult
+import com.example.springboot.app.utils.ValidationResult
+import com.fasterxml.jackson.databind.JsonNode
 import com.example.springboot.app.utils.*
 import com.printscript.cli.logic.AnalyzeLogic
 import com.printscript.cli.logic.FormatLogic
 import org.springframework.stereotype.Service
 import com.printscript.cli.logic.ValidateLogic
+import com.printscript.formatter.config.FormatterConfig
 import com.printscript.interpreter.providers.DefaultEnvProvider
 import com.printscript.interpreter.providers.DefaultInputProvider
 import com.printscript.interpreter.providers.DefaultOutPutProvider
 import com.printscript.interpreter.results.InterpreterFailure
 import com.printscript.interpreter.results.InterpreterSuccess
 import com.printscript.runner.Runner
+import org.slf4j.LoggerFactory
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
 import java.nio.file.Files
+import com.fasterxml.jackson.databind.ObjectMapper
 
 @Service
 class PrintScriptService(
     private val assetService: AssetService
 ) {
-
+    private val logger = LoggerFactory.getLogger(PrintScriptService::class.java)
     fun validateSnippet(version: String, snippetId: String): ValidationResult {
         try {
             val snippet = fetchMultipartFile(snippetId)
-            val result = ValidateLogic().validate(version, snippet.inputStream)
-            return ValidationResult(result, null)//todo add result pattern matching maybe
+            ValidateLogic().validate(version, snippet.inputStream)
+            return ValidationResult("Snippet validated", null)
         } catch (e: Exception) {
             println(e)
             return ValidationResult(null, e.message)
@@ -91,17 +97,53 @@ class PrintScriptService(
     }
 
 
-    fun lintSnippet(snippetId: String, configId: String): List<String> {
-        val snippet = fetchMultipartFile(snippetId)
-        val config = genFile(fetchMultipartFile(configId), "json")
-        return AnalyzeLogic().analyse("1.1", snippet.inputStream, config)
+    fun lintSnippet(snippetId: String, configJson: JsonNode): List<String> {
+        try {
+            val snippet = fetchMultipartFile(snippetId)
+            val result = AnalyzeLogic().analyse("1.1", snippet.inputStream, toJsonFile(toJsonMap(configJson)))
+            return result
+        } catch (e: Exception) {
+            logger.error("Error linting snippet: {}", e.message)
+            return emptyList()
+        }
     }
 
-    fun formatSnippet(snippetId: String, configId: String) {
-        val snippet = genFile(fetchMultipartFile(snippetId), "ps")
-        val config = ConfigReader().readConfig(genFile(fetchMultipartFile(configId), "json"))
-        FormatLogic().format("1.1", snippet, config)
-        assetService.saveSnippet(snippetId, genMultiPartFile(snippet))
+    fun formatSnippet(snippetId: String, config: JsonNode) {
+        try {
+            val formatConfig = genConfig(toJsonMap(config))
+            val snippet = genFile(fetchMultipartFile(snippetId), "ps")
+            println(String(snippet.readBytes()))
+            FormatLogic().format("1.1", snippet, formatConfig)
+            assetService.saveSnippet(snippetId, genMultiPartFile(snippet))
+        } catch (e: Exception) {
+            logger.error("Error formatting snippet: {}", e.message)
+        }
+
+    }
+
+    fun toJsonMap(json: JsonNode): Map<String, String> {
+        return json.filter { it["isActive"].asBoolean() }
+            .associate { it["name"].asText() to it["value"].asText() }
+    }
+
+    fun toJsonFile(map : Map<String, String>): File {
+        val tempFile = Files.createTempFile("config", ".json").toFile()
+        tempFile.writeText(ObjectMapper().writeValueAsString(map))
+        logger.trace("Config file: {}", tempFile.readText())
+        return tempFile
+    }
+
+    fun genConfig(map : Map<String, String>): FormatterConfig{
+        //abomination v2
+        return FormatterConfig(
+            spaceBeforeColon = map["spaceBeforeColon"]?.toBoolean(),
+            spaceAfterColon = map["spaceAfterColon"]?.toBoolean(),
+            spaceAroundEquals = map["spaceAroundEquals"]?.toBoolean(),
+            lineJumpBeforePrintln = map["lineJumpBeforePrintln"]?.toIntOrNull() ?: 1,
+            lineJumpAfterSemicolon = map["lineJumpAfterSemicolon"]?.toBoolean() ?: true,
+            singleSpaceBetweenTokens = map["singleSpaceBetweenTokens"]?.toBoolean() ?: true,
+            spaceAroundOperators = map["spaceAroundOperators"]?.toBoolean() ?: true
+        )
     }
 
     fun fetchMultipartFile(snippetId: String): MultipartFile {
