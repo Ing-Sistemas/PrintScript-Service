@@ -55,7 +55,7 @@ class PrintScriptServiceTest {
 
     @Test
     fun `should execute snippet test successfully`() {
-        val runTestDTO = RunTestDTO("input", null, emptyList(), emptyList(), null)
+        val runTestDTO = RunTestDTO("input", null, emptyList(), emptyList(), TestStatus.PENDING)
         `when`(assetService.getSnippet("snippetId")).thenReturn(ResponseEntity.ok(mockFile))
 
         val result = printScriptService.executeSnippetTest("1.1", "snippetId", runTestDTO)
@@ -66,7 +66,7 @@ class PrintScriptServiceTest {
     fun `should return error when snippet test execution fails`() {
         `when`(assetService.getSnippet("snippetId")).thenThrow(RuntimeException("Execution error"))
 
-        val runTestDTO = RunTestDTO("input", null, emptyList(), emptyList(), null)
+        val runTestDTO = RunTestDTO("input", null, emptyList(), emptyList(), TestStatus.FAIL)
         val result = printScriptService.executeSnippetTest("1.1", "snippetId", runTestDTO)
         assertEquals("Execution error", result.error)
     }
@@ -153,6 +153,8 @@ class PrintScriptServiceTest {
 
     @Test
     fun `should handle lint snippet error`() {
+        val runnerOutPutProv = RunnerOutPutProv()
+        runnerOutPutProv.output("success")
         val configJson = ObjectMapper().createObjectNode()
         `when`(assetService.getSnippet("snippetId")).thenThrow(RuntimeException("Lint error"))
 
@@ -162,6 +164,10 @@ class PrintScriptServiceTest {
 
     @Test
     fun `should format snippet successfully`() {
+        val formatResponse = FormatResponse("success")
+        val runnerEnvProv = RunnerEnvProv()
+        runnerEnvProv.getEnv("")
+
         val configJson = ObjectMapper().createObjectNode().put("name", "spaceBeforeColon").put("value", true).put("isActive", true)
 
         assertDoesNotThrow {
@@ -172,6 +178,9 @@ class PrintScriptServiceTest {
 
     @Test
     fun `should create Json file from map`() {
+        val runnerInputProv = RunnerInputProv(listOf("Enter name: "))
+        runnerInputProv.readInput("hello")
+
         val configMap = mapOf("spaceBeforeColon" to "true")
         val result = printScriptService.toJsonFile(configMap)
         assertTrue(result.exists())
