@@ -54,7 +54,7 @@ jobs:
 
       - name: Build and push Docker image for production
         id: docker_build_prod
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v4
         with:
           context: .
