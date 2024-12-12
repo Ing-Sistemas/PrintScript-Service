@@ -9,7 +9,6 @@ import org.springframework.web.client.RestTemplate
 @RestController
 @RequestMapping("/api/com/health")
 class TestCommunication(private val restTemplate: RestTemplate) {
-
     private val host = System.getenv().getOrDefault("HOST", "localhost")
     private val permissionPort = System.getenv().getOrDefault("PERMISSION_SERVICE_PORT", "none")
     private val snippetPort = System.getenv().getOrDefault("SNIPPET_SERVICE_PORT", "none")
@@ -37,5 +36,4 @@ class TestCommunication(private val restTemplate: RestTemplate) {
             return ResponseEntity.status(500).body("Snippet service is down")
         }
     }
-
 }

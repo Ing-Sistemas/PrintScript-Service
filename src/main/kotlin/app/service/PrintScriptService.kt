@@ -2,12 +2,15 @@ package com.example.springboot.app.service
 
 import com.example.springboot.app.asset.AssetService
 import com.example.springboot.app.utils.ExecuteResult
+import com.example.springboot.app.utils.RunTestDTO
+import com.example.springboot.app.utils.RunnerEnvProv
+import com.example.springboot.app.utils.RunnerInputProv
+import com.example.springboot.app.utils.RunnerOutPutProv
 import com.example.springboot.app.utils.ValidationResult
 import com.fasterxml.jackson.databind.JsonNode
-import com.example.springboot.app.utils.*
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.printscript.cli.logic.AnalyzeLogic
 import com.printscript.cli.logic.FormatLogic
-import org.springframework.stereotype.Service
 import com.printscript.cli.logic.ValidateLogic
 import com.printscript.formatter.config.FormatterConfig
 import com.printscript.interpreter.providers.DefaultEnvProvider
@@ -18,17 +21,21 @@ import com.printscript.interpreter.results.InterpreterSuccess
 import com.printscript.runner.Runner
 import org.slf4j.LoggerFactory
 import org.springframework.mock.web.MockMultipartFile
+import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
 import java.nio.file.Files
-import com.fasterxml.jackson.databind.ObjectMapper
 
 @Service
 class PrintScriptService(
-    private val assetService: AssetService
+    private val assetService: AssetService,
 ) {
     private val logger = LoggerFactory.getLogger(PrintScriptService::class.java)
-    fun validateSnippet(version: String, snippetId: String): ValidationResult {
+
+    fun validateSnippet(
+        version: String,
+        snippetId: String,
+    ): ValidationResult {
         try {
             val snippet = fetchMultipartFile(snippetId)
             ValidateLogic().validate(version, snippet.inputStream)
@@ -39,21 +46,25 @@ class PrintScriptService(
         }
     }
 
-    fun executeSnippet(version: String, snippetId: String): ExecuteResult {
+    fun executeSnippet(
+        version: String,
+        snippetId: String,
+    ): ExecuteResult {
         try {
             val snippet = fetchMultipartFile(snippetId)
             val defaultInputProvider = DefaultInputProvider()
             val defaultOutputProvider = DefaultOutPutProvider()
             val defaultEnvProvider = DefaultEnvProvider()
 
-            val result = Runner(
-                defaultInputProvider,
-                defaultOutputProvider,
-                defaultEnvProvider
+            val result =
+                Runner(
+                    defaultInputProvider,
+                    defaultOutputProvider,
+                    defaultEnvProvider,
                 ).run(snippet.inputStream, version)
             return when (result) {
                 is InterpreterSuccess -> {
-                    ExecuteResult(result.getOriginalValue().toString(),null)
+                    ExecuteResult(result.getOriginalValue().toString(), null)
                 }
                 is InterpreterFailure -> {
                     ExecuteResult(null, result.getErrorMessage())
@@ -68,7 +79,11 @@ class PrintScriptService(
         }
     }
 
-    fun executeSnippetTest(version: String, sId: String, testCase: RunTestDTO): ExecuteResult {
+    fun executeSnippetTest(
+        version: String,
+        sId: String,
+        testCase: RunTestDTO,
+    ): ExecuteResult {
         return try {
             val snippet = fetchMultipartFile(sId)
             val inputProvider = RunnerInputProv(testCase.input)
@@ -77,7 +92,7 @@ class PrintScriptService(
 
             val runner = Runner(inputProvider, outputProvider, envProvider)
 
-            val result = runner.run(snippet.inputStream, version )
+            val result = runner.run(snippet.inputStream, version)
 
             when (result) {
                 is InterpreterSuccess -> {
@@ -96,8 +111,10 @@ class PrintScriptService(
         }
     }
 
-
-    fun lintSnippet(snippetId: String, configJson: JsonNode): List<String> {
+    fun lintSnippet(
+        snippetId: String,
+        configJson: JsonNode,
+    ): List<String> {
         try {
             val snippet = fetchMultipartFile(snippetId)
             val result = AnalyzeLogic().analyse("1.1", snippet.inputStream, toJsonFile(toJsonMap(configJson)))
@@ -108,7 +125,10 @@ class PrintScriptService(
         }
     }
 
-    fun formatSnippet(snippetId: String, config: JsonNode) {
+    fun formatSnippet(
+        snippetId: String,
+        config: JsonNode,
+    ) {
         try {
             val formatConfig = genConfig(toJsonMap(config))
             val snippet = genFile(fetchMultipartFile(snippetId), "ps")
@@ -118,7 +138,6 @@ class PrintScriptService(
         } catch (e: Exception) {
             logger.error("Error formatting snippet: {}", e.message)
         }
-
     }
 
     fun toJsonMap(json: JsonNode): Map<String, String> {
@@ -126,15 +145,15 @@ class PrintScriptService(
             .associate { it["name"].asText() to it["value"].asText() }
     }
 
-    fun toJsonFile(map : Map<String, String>): File {
+    fun toJsonFile(map: Map<String, String>): File {
         val tempFile = Files.createTempFile("config", ".json").toFile()
         tempFile.writeText(ObjectMapper().writeValueAsString(map))
         logger.trace("Config file: {}", tempFile.readText())
         return tempFile
     }
 
-    fun genConfig(map : Map<String, String>): FormatterConfig{
-        //abomination v2
+    fun genConfig(map: Map<String, String>): FormatterConfig {
+        // abomination v2
         return FormatterConfig(
             spaceBeforeColon = map["spaceBeforeColon"]?.toBoolean(),
             spaceAfterColon = map["spaceAfterColon"]?.toBoolean(),
@@ -142,7 +161,7 @@ class PrintScriptService(
             lineJumpBeforePrintln = map["lineJumpBeforePrintln"]?.toIntOrNull() ?: 1,
             lineJumpAfterSemicolon = map["lineJumpAfterSemicolon"]?.toBoolean() ?: true,
             singleSpaceBetweenTokens = map["singleSpaceBetweenTokens"]?.toBoolean() ?: true,
-            spaceAroundOperators = map["spaceAroundOperators"]?.toBoolean() ?: true
+            spaceAroundOperators = map["spaceAroundOperators"]?.toBoolean() ?: true,
         )
     }
 
@@ -151,7 +170,10 @@ class PrintScriptService(
         return snippet.body!!
     }
 
-    fun genFile(multipartFile: MultipartFile, suffix : String): File {
+    fun genFile(
+        multipartFile: MultipartFile,
+        suffix: String,
+    ): File {
         val tempFile = Files.createTempFile(multipartFile.name, suffix).toFile()
         multipartFile.transferTo(tempFile)
         return tempFile
@@ -160,5 +182,4 @@ class PrintScriptService(
     fun genMultiPartFile(file: File): MultipartFile {
         return MockMultipartFile(file.name, file.name, Files.probeContentType(file.toPath()), file.readBytes())
     }
-
 }
