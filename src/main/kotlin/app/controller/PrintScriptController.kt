@@ -133,4 +133,14 @@ class PrintScriptController(
             ResponseEntity.status(500).body(null + "Error in ps: ${e.message}")
         }
     }
+
+    @GetMapping("/correlate/{cId}")
+    fun correlation(
+        @PathVariable cId: String,
+        @AuthenticationPrincipal jwt: Jwt
+    ): ResponseEntity<Void> {
+        logger.info("Correlation ID: $cId")
+        return ResponseEntity.ok().build()
+
+    }
 }
