@@ -1,14 +1,26 @@
 import com.example.springboot.app.asset.AssetService
 import com.example.springboot.app.service.PrintScriptService
-import com.example.springboot.app.utils.*
+import com.example.springboot.app.utils.FormatRequest
+import com.example.springboot.app.utils.FormatResponse
+import com.example.springboot.app.utils.LintRequest
+import com.example.springboot.app.utils.RunTestDTO
+import com.example.springboot.app.utils.RunnerEnvProv
+import com.example.springboot.app.utils.RunnerInputProv
+import com.example.springboot.app.utils.RunnerOutPutProv
+import com.example.springboot.app.utils.TestStatus
+import com.example.springboot.app.utils.ValidateRequest
+import com.example.springboot.app.utils.ValidateResponse
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.Mockito.*
+import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.http.ResponseEntity
 import org.springframework.mock.web.MockMultipartFile
@@ -19,7 +31,6 @@ import kotlin.test.assertNotNull
 
 @ExtendWith(MockitoExtension::class)
 class PrintScriptServiceTest {
-
     @Mock
     lateinit var assetService: AssetService
 
@@ -43,7 +54,6 @@ class PrintScriptServiceTest {
         val result = printScriptService.validateSnippet("1.1", "snippetId")
         assertEquals("Asset not found", result.error)
     }
-
 
     @Test
     fun `should return error when execution fails`() {
@@ -92,14 +102,12 @@ class PrintScriptServiceTest {
         assertNotNull(multipartFile)
     }
 
-
     @Test
     fun `should return null output and error for unknown interpreter result`() {
         val snippetContent = "unknown result"
         val objectMapper = ObjectMapper()
         val jsonFilePath = Paths.get("src/test/kotlin/utils/formatterConfig.json")
         val jsonFormatter: JsonNode = objectMapper.readTree(Files.newBufferedReader(jsonFilePath))
-
 
         val jsonFilePath2 = Paths.get("src/test/kotlin/utils/linterConfig.json")
         val jsonLinter: JsonNode = objectMapper.readTree(Files.newBufferedReader(jsonFilePath))
@@ -109,7 +117,6 @@ class PrintScriptServiceTest {
         val lintRequest = LintRequest("id", jsonLinter)
         val validateRequest = ValidateRequest("1.1", "sId")
         val validateResponse = ValidateResponse(null, null)
-
 
         `when`(assetService.getSnippet("snippetId")).thenReturn(ResponseEntity.ok(mockFile))
 
@@ -175,7 +182,6 @@ class PrintScriptServiceTest {
         }
     }
 
-
     @Test
     fun `should create Json file from map`() {
         val runnerInputProv = RunnerInputProv(listOf("Enter name: "))
@@ -189,10 +195,11 @@ class PrintScriptServiceTest {
 
     @Test
     fun `should generate FormatterConfig from map`() {
-        val configMap = mapOf(
-            "spaceBeforeColon" to "true",
-            "lineJumpAfterSemicolon" to "false"
-        )
+        val configMap =
+            mapOf(
+                "spaceBeforeColon" to "true",
+                "lineJumpAfterSemicolon" to "false",
+            )
 
         val result = printScriptService.genConfig(configMap)
         assertTrue(result.spaceBeforeColon!!)

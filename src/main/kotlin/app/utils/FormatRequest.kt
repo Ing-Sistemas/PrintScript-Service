@@ -4,5 +4,5 @@ import com.fasterxml.jackson.databind.JsonNode
 
 data class FormatRequest(
     val snippetId: String,
-    val config: JsonNode
+    val config: JsonNode,
 )
