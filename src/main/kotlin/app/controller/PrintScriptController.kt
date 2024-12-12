@@ -65,7 +65,11 @@ class PrintScriptController(
         return try {
             logger.trace("Linting snippet with id: ${lintRequest.snippetId}")
             val result = printScriptService.lintSnippet(lintRequest.snippetId,lintRequest.rules)
-            ResponseEntity.ok(result)
+            return if (result.isEmpty()){
+                ResponseEntity.ok(result)
+            } else {
+                ResponseEntity.status(400).body(result)
+            }
         } catch (e: Exception) {
             logger.error(e.message)
             ResponseEntity.status(500).body(null)
